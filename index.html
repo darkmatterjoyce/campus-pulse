@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Pulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0d1b2a;--mute:#5b6878;--paper:#f2f4f7;--card:#fff;--line:#d5dbe3;--brand:#1347b8}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:'Bricolage Grotesque',system-ui,sans-serif;color:var(--ink);background:var(--paper);overflow:hidden;position:relative;width:100%;height:100%}
+#map{position:absolute;top:0;left:0;width:100%;height:100%;background:#e5e3df}
+.float{background:rgba(255,255,255,.97);border-radius:16px;box-shadow:0 2px 6px rgba(13,27,42,.18),0 10px 30px rgba(13,27,42,.16)}
+aside{position:fixed;z-index:5;top:16px;left:16px;bottom:16px;width:420px;display:flex;flex-direction:column;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0}
+.fromrow{padding:6px 16px 0}
+.fromrow label{margin-top:8px}
+.pbody{flex:1;overflow-y:auto;padding:4px 16px 20px;overscroll-behavior:contain}
+.fold{width:36px;height:36px;padding:0;border-radius:50%;font-size:20px;line-height:1}
+#unfold{position:fixed;z-index:5;top:16px;left:16px;padding:10px 16px;font-weight:600}
+body:not(.folded) #unfold,body.folded aside{display:none}
+#dock{position:fixed;z-index:4;left:452px;right:16px;bottom:16px;padding:12px 16px 12px;max-width:760px;margin:0 auto}
+body.folded #dock{left:16px}
+.dockrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dockrow input[type=range]{flex:1;min-width:160px}
+.dockrow select{width:auto;padding:6px 8px}
+.dockrow .time{display:block}.dockrow .time b{font-size:24px;min-width:66px;display:inline-block}
+#hackbtn{position:fixed;z-index:4;right:16px;bottom:96px;background:#ffd23f;color:#2b1d10;border:2px solid #2b1d10;border-radius:999px;padding:8px 14px;font:700 13px system-ui,sans-serif;text-decoration:none;box-shadow:2px 2px 0 #2b1d10}#hackbtn:hover{transform:translate(1px,1px)}#hackbtn:focus-visible{outline:3px solid #1347b8;outline-offset:2px}@media(max-width:820px){#hackbtn{bottom:auto;top:16px;right:8px;padding:6px 10px;font-size:12px}}
+#topright{position:fixed;z-index:4;top:16px;right:16px;width:min(340px,calc(100vw - 480px));display:flex;flex-direction:column;gap:10px}
+#insight{max-height:30vh;overflow-y:auto;margin:0!important;font-size:14px}
+#incbar{border-left:4px solid #d7263d;padding:10px 12px;font-size:14px;cursor:pointer}#incbar b{color:#a3182a}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cats button{text-align:left;padding:8px 10px;font-size:14px}
+.cats button[aria-pressed=true]{background:#e8efff;border-color:var(--brand);color:var(--brand);font-weight:600}
+textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);resize:vertical}
+details{margin-top:12px}summary{cursor:pointer;font-weight:600;padding:4px 0}
+.ep{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.ep.open{border-color:#d7263d}.ep.closed{opacity:.75}
+.ep h4{margin:0 0 6px;font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.ep dl{margin:6px 0;font-size:13px}.ep dt{font-weight:600;margin-top:6px}.ep dd{margin:0;color:var(--mute)}
+.ep ul{margin:4px 0 8px;padding-left:18px;font-size:13px;color:var(--mute)}
+.led{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;font-size:13px}
+.led .bar{margin:2px 0}.led small{color:var(--mute)}
+.tl{font-size:13px;margin:0;padding:0;list-style:none}.tl li{padding:4px 0 4px 10px;border-left:3px solid var(--line);margin-bottom:2px}
+.tl li.evidence{border-color:#d7263d}.tl li.revision{border-color:var(--brand)}.tl li.action{border-color:#1a9e6b}.tl time{color:var(--mute);margin-right:6px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0}
+h3{margin:14px 0 4px;font-size:16px}
+.sub{color:var(--mute);margin:2px 0 14px;font-size:14px}
+label,.lbl{display:block;font-size:13px;font-weight:600;margin:12px 0 4px}
+label.chk{display:flex;gap:8px;align-items:center;font-weight:400}
+select,input[type=number],input[type=search]{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+input[type=range]{width:100%;accent-color:var(--brand)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:8px 12px}
+button.go{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;width:100%;margin-top:12px}
+button.small{padding:4px 10px;font-size:13px}
+:focus-visible{outline:3px solid #7aa2ff;outline-offset:2px}
+.row{display:flex;gap:8px}.row>input,.row>select{flex:1;min-width:0}
+.time{display:flex;justify-content:space-between;align-items:baseline}
+.time b{font-size:22px}
+.jump{display:flex;gap:6px;flex-wrap:wrap}.jump button{padding:4px 10px;font-size:13px}
+.legend{height:8px;border-radius:4px;background:linear-gradient(90deg,#0a3cff,#00b4ff,#00dc78,#ffeb00,#ff8c00,#d71428);margin:10px 0 2px}
+.scale{display:flex;justify-content:space-between;font-size:12px;color:var(--mute)}
+.sug{margin-top:4px}
+.sug button{display:block;width:100%;text-align:left;border-radius:0;border:0;border-bottom:1px solid var(--line);padding:7px 8px;background:var(--card)}
+.sug button:first-child{border-radius:8px 8px 0 0}.sug button:last-child{border-radius:0 0 8px 8px;border-bottom:0}
+.sug span{display:block;font-size:12px;color:var(--mute)}
+[role=tablist]{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;margin:12px 16px 4px;padding:4px;background:#e9edf3;border-radius:12px}
+[role=tab]{border:0;border-radius:9px;background:none;padding:8px 0;font-weight:600;font-size:12.5px;color:var(--mute)}
+[role=tab][aria-selected=true]{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(13,27,42,.2)}
+[hidden]{display:none!important}
+.res{margin-top:12px;font-size:14px}
+.sum{background:var(--card);border-left:4px solid var(--brand);padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:10px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.opt b{display:block}.opt span{color:var(--mute);font-size:13px}
+.opt .actions{margin-top:6px}
+.meta{color:var(--mute);font-size:13px}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.actions button{padding:5px 10px;font-size:13px}
+.indoor{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:4px 12px 12px;margin-bottom:10px}
+.ftabs{display:flex;gap:4px;margin:8px 0;flex-wrap:wrap}.ftabs button{padding:3px 10px;font-size:13px}
+.ftabs button[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+.plan{border:1px solid var(--line);border-radius:8px;padding:4px;background:#fafbfc}
+.steps{padding-left:20px;margin:10px 0 0}.steps li{margin:5px 0;cursor:pointer}
+.detail{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:12px 0;overflow:hidden}
+.detail .body{padding:10px 12px 12px}
+.detail .x{float:right;margin:0 0 0 8px}
+.photos{display:flex;gap:2px;height:120px;background:#e8ecf2}
+.photos img{flex:1;min-width:0;object-fit:cover;height:100%}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chips button.chip{cursor:pointer;text-align:left}.chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:#f7f9fb}
+.chip.ok{border-color:#1a9e6b;color:#0b6b46}.chip.bad{border-color:#d7263d;color:#a3182a}
+.bar{height:8px;border-radius:4px;background:#e5e9ef;overflow:hidden;margin:4px 0}.bar i{display:block;height:100%}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:6px 4px;text-align:center;background:#fff}
+.tile b{display:block;font-size:18px}.tile span{font-size:11px;color:var(--mute)}
+.chart svg{width:100%;height:auto;display:block}
+.rate{display:flex;gap:4px;margin:6px 0}.rate button{padding:4px 12px}
+.detail dl{margin:8px 0 0;font-size:13px}.detail dt{font-weight:600;margin-top:6px}.detail dd{margin:0;color:var(--mute)}
+.detail ul{margin:4px 0 0;padding-left:18px;font-size:12px;color:var(--mute)}
+.detail a{color:var(--brand)}
+.fc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+.gap{border-left:4px solid #1a9e6b;background:#f1faf6;border-radius:0 10px 10px 0;padding:8px 12px;margin-bottom:8px}
+.sess{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.sess b{font-size:15px}
+.note{font-size:12px;color:var(--mute);margin-top:22px}
+@media(max-width:820px){
+aside{top:auto;left:8px;right:8px;bottom:8px;width:auto;height:54vh}
+#dock{left:8px;right:8px;top:8px;bottom:auto;max-width:none;padding:8px 12px}
+body.folded #dock{left:8px}
+.dockrow .jump,.dockrow .legendbox{display:none}
+.dockrow{flex-wrap:nowrap;gap:8px}.dockrow input[type=range]{min-width:0}.dockrow .time b{font-size:20px;min-width:52px}
+#topright{top:70px;right:8px;left:8px;width:auto}#insight{max-height:16vh;font-size:13px}
+#unfold{top:auto;left:8px;bottom:8px}
+}
+</style>
+</head>
+<body>
+<div id="map" role="application" aria-label="Campus map"></div>
+
+<aside class="float" id="panel">
+  <div class="ph"><div><h1>Campus Pulse</h1><p class="sub" style="margin:0">How busy is Imperial, and where should you go?</p></div>
+    <button class="fold" id="fold" type="button" aria-label="Hide panel" title="Hide panel">&lsaquo;</button></div>
+
+  <div class="fromrow">
+    <label for="q-from">I'm at</label>
+    <div class="row"><input id="q-from" type="search" value="Imperial campus" autocomplete="off"><button id="gps" type="button">Use GPS</button></div>
+    <div class="sug" id="s-from"></div>
+    <label class="chk" style="margin-top:8px"><input id="sf" type="checkbox"> Step-free routes and spaces only</label>
+  </div>
+
+  <div role="tablist" aria-label="Tools">
+    <button role="tab" aria-selected="true" data-tab="nav">Directions</button>
+    <button role="tab" aria-selected="false" data-tab="day">My day</button>
+    <button role="tab" aria-selected="false" data-tab="lunch">Lunch</button>
+    <button role="tab" aria-selected="false" data-tab="spaces">Spaces</button>
+    <button role="tab" aria-selected="false" data-tab="fc">Forecast</button>
+    <button role="tab" aria-selected="false" data-tab="ask">Ask AI</button>
+    <button role="tab" aria-selected="false" data-tab="agent">Report</button>
+  </div>
+
+  <div class="pbody">
+  <div class="detail" id="detail" hidden></div>
+
+  <section id="p-nav">
+    <label for="q-to">Going to</label>
+    <input id="q-to" type="search" placeholder="Building, room, restaurant or address" autocomplete="off">
+    <div class="sug" id="s-to"></div>
+    <button class="go" id="goNav">Get directions</button>
+    <div class="res" id="r-nav" aria-live="polite"></div>
+  </section>
+
+  <section id="p-day" hidden>
+    <div class="row">
+      <div style="flex:1"><label for="dept">Course</label><select id="dept"></select></div>
+      <div style="flex:0 0 110px"><label for="yr">Year</label><select id="yr"></select></div>
+    </div>
+    <p class="meta">Uses the day and time chosen in the bar at the bottom of the map. Timetables here are made up for the demo.</p>
+    <div class="res" id="r-day" aria-live="polite"></div>
+  </section>
+
+  <section id="p-lunch" hidden>
+    <label for="mins">Time for lunch (minutes, including walking back)</label>
+    <input id="mins" type="number" min="10" max="120" value="45">
+    <button class="go" id="goLunch">Find lunch</button>
+    <div class="res" id="r-lunch" aria-live="polite"></div>
+  </section>
+
+  <section id="p-spaces" hidden>
+    <label for="kind">What are you looking for?</label>
+    <select id="kind"><option value="study">Study space</option><option value="quiet">Quiet space</option><option value="social">Social space</option><option value="music">Music or practice room</option></select>
+    <button class="go" id="goSpace">Find a space</button>
+    <div class="res" id="r-space" aria-live="polite"></div>
+  </section>
+
+  <section id="p-ask" hidden>
+    <label for="q-ask">Ask about campus</label>
+    <div class="row"><input id="q-ask" type="search" placeholder="e.g. Is there a free microwave near me?" autocomplete="off" maxlength="300"><button class="go" id="goAsk" style="margin:0;width:auto">Ask</button></div>
+    <div class="chips" id="askChips"></div>
+    <div class="res" id="r-ask" aria-live="polite"></div>
+    <p class="meta">Answers use the busyness on the map plus demo amenity data (microwaves, water refills, chargers, printers, prayer rooms). Free counts are estimates, not live sensors.</p>
+  </section>
+
+  <section id="p-agent" hidden>
+    <div class="sum" id="ag-wx" style="margin-top:10px">Checking the weather...</div>
+    <h3>Report a problem</h3>
+    <p class="meta">Help other students. Reports change the map, routes and suggestions for everyone, and the more people report something, the more the agent trusts it.</p>
+    <div class="lbl">What's wrong?</div>
+    <div class="cats" id="ag-cats" role="group" aria-label="What is wrong"></div>
+    <div id="ag-arow" hidden><div class="lbl">Which facility?</div><div class="cats" id="ag-akinds" role="group" aria-label="Which facility"></div></div>
+    <div id="ag-lrow" hidden><div class="lbl">How busy is it?</div><div class="cats" id="ag-levels" role="group" aria-label="How busy is it"></div></div>
+    <label for="ag-q">Where?</label>
+    <input id="ag-q" type="search" placeholder="Search a building, room, cafe or street" autocomplete="off">
+    <div class="sug" id="ag-s"></div>
+    <div class="chips" id="ag-near"></div>
+    <label for="ag-text">Tell us more (optional)</label>
+    <textarea id="ag-text" rows="3" maxlength="300" placeholder="Not on the list? Describe it in your own words, for example: scaffolding on the ramp to Huxley. The agent works out what it affects."></textarea>
+    <button class="go" id="goAgent">Send report</button>
+    <div class="res" id="ag-msg" aria-live="polite"></div>
+    <div id="ag-wanted"></div>
+    <h3>Reported right now</h3><div id="ag-eps"></div>
+    <details><summary>What the agent assumes</summary><div id="ag-ledger"></div></details>
+    <details><summary>Timeline</summary><ol class="tl" id="ag-tl"></ol></details>
+    <details><summary>Demo controls</summary><div class="actions"><button type="button" id="agRain" class="small">Simulate rain</button><button type="button" id="agReset" class="small">Reset the demo</button></div></details>
+  </section>
+
+  <section id="p-fc" hidden>
+    <p class="meta">Predicted busyness through the day, from the AI forecast. The shaded area is the next two hours.</p>
+    <label for="q-a">Place A</label><input id="q-a" type="search" autocomplete="off"><div class="sug" id="s-a"></div>
+    <label for="q-b">Compare with</label><input id="q-b" type="search" autocomplete="off"><div class="sug" id="s-b"></div>
+    <div id="r-fc" aria-live="polite"></div>
+  </section>
+
+  <p class="note">Demo data: course timetables, ID tap-ins and indoor floor plans are made up, and venue busyness is predicted by Gemini. Place photos, ratings and opening hours come from Google. Tap any place on the map to see details.</p>
+  </div>
+</aside>
+<button class="float" id="unfold" type="button">Show menu</button>
+
+<div id="topright"><div class="float" id="incbar" hidden></div><div class="float sum" id="insight" hidden></div></div>
+
+<div class="float" id="dock">
+  <div class="dockrow">
+    <div class="time"><b id="tlabel">Live</b></div>
+    <input id="t" type="range" min="360" max="1410" step="15" aria-label="Time of day">
+    <select id="day" aria-label="Day"><option value="">Today</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="7">Sunday</option></select>
+  </div>
+  <div class="dockrow" style="margin-top:8px">
+    <div class="jump"><button id="now" type="button">Back to live</button><button type="button" data-t="600">10:00</button><button type="button" data-t="750">12:30</button><button type="button" data-t="900">15:00</button><button type="button" data-t="1200">20:00</button></div>
+    <div class="legendbox" style="flex:1;min-width:150px"><div class="legend" style="margin:0 0 2px"></div><div class="scale"><span>Quiet</span><span>Packed</span></div></div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+const btn = (text, fn, cls) => { const b = el('button', cls || 'small', text); b.type = 'button'; b.onclick = fn; return b; };
+const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
+const sid = store.get('sid') || (() => { const v = crypto.randomUUID(); store.set('sid', v); return v; })();
+const DAYN = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const TYPE = { lecture: 'Building', study: 'Study space', food: 'Food and drink', social: 'Social space', music: 'Music room' };
+let map, heat, locs = [], live = true, lines = [], dots = {}, cfg, to = null, detail = null, fcA = null, fcB = null, courses = [];
+let from = { kind: 'point', name: 'Imperial campus', lat: 51.4988, lng: -0.1752 };
+const slider = $('#t');
+
+const STOPS = [[10, 60, 255], [0, 180, 255], [0, 220, 120], [255, 235, 0], [255, 140, 0], [215, 20, 40]];
+const col = b => { const x = Math.max(0, Math.min(1, b)) * 5, i = Math.min(4, Math.floor(x)), t = x - i, a = STOPS[i], c = STOPS[i + 1]; return 'rgb(' + a.map((v, k) => Math.round(v + (c[k] - v) * t)).join(',') + ')'; };
+const word = b => b < .25 ? 'Quiet' : b < .5 ? 'Moderate' : b < .75 ? 'Busy' : 'Packed';
+const pct = b => Math.round(b * 100);
+const mins = s => Math.max(1, Math.round(s / 60));
+const hav = (a, b) => { const r = x => x * Math.PI / 180, k = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lng - a.lng) / 2) ** 2; return 12742000 * Math.asin(Math.sqrt(k)); };
+const safeUrl = u => (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : null;
+const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+
+const atISO = () => { const d = new Date(); if (!live) d.setHours(0, +slider.value, 0, 0); return d.toISOString(); };
+const qs = () => 'at=' + encodeURIComponent(atISO()) + '&day=' + $('#day').value;
+const tlabel = () => { $('#tlabel').textContent = live && !$('#day').value ? 'Live' : hhmm(+slider.value); };
+const setNow = () => { const d = new Date(); slider.value = Math.min(1410, Math.max(360, Math.round((d.getHours() * 60 + d.getMinutes()) / 15) * 15)); live = true; tlabel(); };
+const api = async (url, opts) => {
+  const r = await fetch(url, opts), j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `Request failed (${r.status})`);
+  return j;
+};
+const post = (url, body) => api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const pos = () => new Promise(r => navigator.geolocation ? navigator.geolocation.getCurrentPosition(
+  p => r({ lat: p.coords.latitude, lng: p.coords.longitude }), () => r(null), { enableHighAccuracy: true, timeout: 8000 }) : r(null));
+const PIN = 'M0,0 C-3,-12 -12,-18 -12,-28 A12,12 0 1,1 12,-28 C12,-18 3,-12 0,0 Z';
+const dot = (key, p, color) => { // pin whose tip sits exactly on the place; A = start (green), B = end (red)
+  const start = key === 'me', end = key === 'to', c = start ? '#1a9e6b' : end ? '#d7263d' : color;
+  const o = { position: { lat: p.lat, lng: p.lng }, zIndex: 20, clickable: false, title: start ? 'Start' : end ? 'Destination' : 'Selected place',
+    icon: { path: PIN, fillColor: c, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: 1.25, labelOrigin: new google.maps.Point(0, -28) },
+    label: start ? { text: 'A', color: '#fff', fontWeight: '700', fontSize: '14px' } : end ? { text: 'B', color: '#fff', fontWeight: '700', fontSize: '14px' } : null };
+  if (dots[key]) dots[key].setOptions(o); else dots[key] = new google.maps.Marker({ map, ...o });
+};
+// ---------- refresh heat map and AI insight ----------
+async function refresh() {
+  const q = qs();
+  const [h, i] = await Promise.all([api('/api/heat?' + q), api('/api/insight?' + q)]);
+  locs = h; heat.pts = locs; heat.draw();
+  const box = $('#insight'); box.replaceChildren();
+  if (i.note) box.append(el('div', '', `${i.src === 'gemini' ? 'AI insight' : 'Estimate'}: ${i.note}`));
+  if (i.attendance != null) box.append(el('div', 'meta', `Expected attendance: ${pct(i.attendance)}% of students. ${i.attNote}`));
+  box.hidden = !box.childNodes.length;
+  if (detail?.loc) { detail.loc = locs.find(l => l.id === detail.loc.id) || detail.loc; drawDetailChart(); }
+  if (!fcA && !fcB) { fcA = locs.find(l => l.name === 'Abdus Salam Library')?.id || null; fcB = locs.find(l => l.name === 'Eastside Bar and Kitchen')?.id || null; }
+  if (!$('#p-fc').hidden) renderForecast();
+}
+
+// ---------- search boxes ----------
+function searchBox(input, list, onPick, filter = () => true) {
+  let tm, seq = 0;
+  input.addEventListener('input', () => {
+    clearTimeout(tm);
+    const q = input.value.trim();
+    if (q.length < 2) { list.replaceChildren(); return; }
+    tm = setTimeout(async () => {
+      const n = ++seq;
+      let r; try { r = await api('/api/search?q=' + encodeURIComponent(q)); } catch { return; }
+      if (n !== seq) return;
+      list.replaceChildren();
+      r.filter(filter).forEach(x => {
+        const b = el('button'); b.type = 'button'; b.append(el('b', '', x.name), el('span', '', x.sub || ''));
+        b.onclick = () => { input.value = x.name; list.replaceChildren(); onPick(x); };
+        list.append(b);
+      });
+      if (!list.childNodes.length) list.append(el('span', 'meta', 'No matches. Try a building, room or street name.'));
+    }, 300);
+  });
+}
+searchBox($('#q-from'), $('#s-from'), x => { from = x; dot('me', x, '#1347b8'); map.panTo(x); });
+searchBox($('#q-to'), $('#s-to'), x => { to = x; dot('to', x, '#d7263d'); map.panTo(x); });
+searchBox($('#q-a'), $('#s-a'), x => { fcA = x.locationId; renderForecast(); }, x => x.locationId);
+searchBox($('#q-b'), $('#s-b'), x => { fcB = x.locationId; renderForecast(); }, x => x.locationId);
+$('#gps').onclick = async () => {
+  const p = await pos();
+  if (!p) { alert('Location is blocked. Search for where you are instead.'); return; }
+  from = { kind: 'gps', name: 'My location', ...p }; $('#q-from').value = 'My location'; dot('me', p, '#1347b8'); map.panTo(p);
+};
+
+// ---------- charts ----------
+function chartNode(f) {
+  const wrap = el('div', 'chart'), n = f.series.length, W = 360, H = 150, L = 30, R = 8, T = 8, B = 22;
+  const x = i => L + (W - L - R) * i / (n - 1), y = v => T + (H - T - B) * (1 - v);
+  const idx = f.series.findIndex(p => p.t === f.slot);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Predicted busyness through the day for ${f.name.replace(/[<>&"]/g, '')}">`;
+  [0, .5, 1].forEach(v => { s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="#e1e6ed"/><text x="${L - 4}" y="${y(v) + 3}" font-size="9" text-anchor="end" fill="#5b6878">${v * 100}%</text>`; });
+  ['08:00', '12:00', '16:00', '20:00'].forEach(t => { const i = f.series.findIndex(p => p.t === t); if (i >= 0) s += `<text x="${x(i)}" y="${H - 6}" font-size="9" text-anchor="middle" fill="#5b6878">${t}</text>`; });
+  if (idx >= 0) s += `<rect x="${x(idx)}" y="${T}" width="${x(Math.min(n - 1, idx + 4)) - x(idx)}" height="${H - T - B}" fill="rgba(19,71,184,.09)"/>`;
+  const pts = f.series.map((p, i) => `${x(i).toFixed(1)},${y(p.busy).toFixed(1)}`);
+  s += `<polygon points="${x(0)},${y(0)} ${pts.join(' ')} ${x(n - 1)},${y(0)}" fill="rgba(19,71,184,.12)"/><polyline points="${pts.join(' ')}" fill="none" stroke="#1347b8" stroke-width="2" stroke-linejoin="round"/>`;
+  if (idx >= 0) {
+    s += `<line x1="${x(idx)}" x2="${x(idx)}" y1="${T}" y2="${H - B}" stroke="#0d1b2a" stroke-dasharray="3 3"/>`;
+    [0, 1, 2].forEach(k => { const p = f.series[idx + k]; if (p) s += `<circle cx="${x(idx + k)}" cy="${y(p.busy)}" r="3.5" fill="${col(p.busy)}" stroke="#0d1b2a" stroke-width="1"/>`; });
+  }
+  wrap.innerHTML = s + '</svg>';
+  const tiles = el('div', 'tiles');
+  [['Now', 0], ['+30 min', 1], ['+1 hour', 2], ['+2 hours', 4]].forEach(([label, k]) => {
+    const p = idx >= 0 ? f.series[idx + k] : null, t = el('div', 'tile');
+    t.append(el('b', '', p ? pct(p.busy) + '%' : 'n/a'), el('span', '', p ? `${label}, ${word(p.busy).toLowerCase()}` : label));
+    if (p) t.style.borderBottom = `4px solid ${col(p.busy)}`;
+    tiles.append(t);
+  });
+  wrap.append(tiles, el('div', 'meta', `Source: ${f.src}. Outside 07:00 to 23:30 nothing is predicted.`));
+  return wrap;
+}
+async function fillChart(box, locationId) {
+  box.replaceChildren(el('div', 'meta', 'Loading forecast...'));
+  try { const f = await api(`/api/forecast?locationId=${locationId}&${qs()}`); box.replaceChildren(chartNode(f)); }
+  catch (e) { box.replaceChildren(el('div', 'meta', e.message)); }
+}
+function renderForecast() {
+  const out = $('#r-fc'); out.replaceChildren();
+  [[fcA, '#q-a'], [fcB, '#q-b']].forEach(([id, input]) => {
+    const l = locs.find(x => x.id === id); if (!l) return;
+    $(input).value = l.name;
+    const card = el('div', 'fc'), body = el('div');
+    card.append(el('b', '', l.name), el('div', 'meta', `${TYPE[l.type]}${l.campus ? '' : ', near campus'}. Now: ${word(l.busy).toLowerCase()} (${pct(l.busy)}%).`), body);
+    out.append(card); fillChart(body, id);
+  });
+  if (!out.childNodes.length) out.append(el('p', 'meta', 'Search for a place above to see its forecast.'));
+}
+
+// ---------- place details (click a place on the map) ----------
+const typeLabel = l => l ? TYPE[l.type] + (l.campus ? ', on campus' : ', near campus') : '';
+async function openPlace(ref) {
+  const box = $('#detail'); box.hidden = false; box.replaceChildren(el('div', 'body', 'Loading place...')); box.scrollIntoView({ block: 'nearest' });
+  const loc = ref.locationId ? locs.find(l => l.id == ref.locationId) : (ref.placeId ? locs.find(l => l.place_id === ref.placeId) : null);
+  const pid = ref.placeId || loc?.place_id, p = new URLSearchParams();
+  if (loc) p.set('locationId', loc.id); if (pid) p.set('placeId', pid);
+  let d; try { d = await api('/api/place?' + p); } catch (e) { box.replaceChildren(el('div', 'body', e.message)); return; }
+  const g = d.google, own = d.own, name = g?.name || own?.name || ref.name || 'Place';
+  const at = { lat: g?.lat ?? own?.lat ?? ref.lat, lng: g?.lng ?? own?.lng ?? ref.lng };
+  detail = { loc, name, at };
+  if (at.lat != null) dot('sel', at, '#7b2cbf');
+  const body = el('div', 'body');
+  body.append(btn('Close', () => { box.hidden = true; detail = null; if (dots.sel) { dots.sel.setMap(null); delete dots.sel; } }, 'x small'));
+  body.append(el('h3', '', name));
+  body.append(el('div', 'meta', [g?.type || typeLabel(own || loc), g?.address].filter(Boolean).join(' · ')));
+  const chips = el('div', 'chips');
+  if (g?.openNow === true) chips.append(el('span', 'chip ok', 'Open now')); else if (g?.openNow === false) chips.append(el('span', 'chip bad', 'Closed now'));
+  if (g?.rating) chips.append(el('span', 'chip', `★ ${g.rating}${g.ratingCount ? ` (${g.ratingCount})` : ''}`));
+  if (g?.price) chips.append(el('span', 'chip', g.price));
+  const liveRow = own && locs.find(l => l.id === own.id);
+  (liveRow?.flags || []).forEach(f => chips.append(el('span', 'chip bad', f)));
+  if (own) chips.append(el('span', 'chip', (liveRow ? liveRow.step_free : own.step_free) ? 'Step-free' : 'Has stairs'), el('span', 'chip', `Noise ${own.noise}/5`));
+  if (chips.childNodes.length) body.append(chips);
+  if (g?.photos?.length) { const ph = el('div', 'photos'); g.photos.forEach(n => { const im = el('img'); im.src = '/api/photo?name=' + encodeURIComponent(n); im.alt = `Photo of ${name}`; im.loading = 'lazy'; ph.append(im); }); box.replaceChildren(ph, body); }
+  else box.replaceChildren(body);
+  if (loc) {
+    body.append(el('div', '', `${word(loc.busy)} now, ${pct(loc.busy)}% full`), (() => { const b = el('div', 'bar'), i = el('i'); i.style.width = pct(loc.busy) + '%'; i.style.background = col(loc.busy); b.append(i); return b; })(),
+      el('div', 'meta', `Source: ${loc.source}`));
+    const cb = el('div', 'chart'); cb.id = 'detail-chart'; body.append(cb); drawDetailChart();
+  } else body.append(el('div', 'meta', 'Busyness is not tracked for this place.'));
+  if (g?.summary) body.append(el('p', 'meta', g.summary));
+  if (g?.hours?.length) { const dt = el('details'); dt.append(el('summary', '', 'Opening hours')); const ul = el('ul'); g.hours.forEach(h => ul.append(el('li', '', h))); dt.append(ul); body.append(dt); }
+  const links = el('dl');
+  if (g?.phone) { links.append(el('dt', '', 'Phone'), el('dd', '', g.phone)); }
+  [['Website', safeUrl(g?.website)], ['Google Maps', safeUrl(g?.mapsUri)]].forEach(([t, u]) => { if (u) { const a = el('a', '', t === 'Website' ? u.replace(/^https?:\/\/(www\.)?/, '').slice(0, 40) : 'Open in Google Maps'); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; const dd = el('dd'); dd.append(a); links.append(el('dt', '', t), dd); } });
+  if (links.childNodes.length) body.append(links);
+  if (d.googleError) body.append(el('p', 'meta', `Google place details unavailable: ${d.googleError}`));
+  const act = el('div', 'actions');
+  if (loc) act.append(btn('Report a problem', () => reportAt(loc.id, name)));
+  act.append(btn('Directions', () => { to = { kind: loc ? 'campus' : 'place', name, lat: at.lat, lng: at.lng, placeId: pid, locationId: loc?.id }; $('#q-to').value = name; dot('to', at, '#d7263d'); tab('nav'); navigate(); }));
+  if (loc) act.append(btn('Compare forecast', () => { fcA = loc.id; tab('fc'); renderForecast(); }));
+  body.append(act);
+  if (loc) {
+    const ci = el('div'), rate = el('div', 'rate'), msg = el('div', 'meta');
+    ci.append(el('div', 'lbl', 'How busy is it right now? (you need to be here to check in)'));
+    [1, 2, 3, 4, 5].forEach(n => { const b = btn(String(n), async () => {
+      msg.textContent = 'Checking your location...';
+      const q = await pos();
+      try { await post('/api/checkin', { locationId: loc.id, rating: n, studentId: sid, lat: q?.lat, lng: q?.lng }); msg.textContent = 'Checked in. Thanks for helping others.'; refresh(); }
+      catch (e) { msg.textContent = e.message; }
+    }, 'small'); b.setAttribute('aria-label', `Rate ${n} of 5`); rate.append(b); });
+    ci.append(rate, el('div', 'meta', '1 is quiet, 5 is packed.'), msg); body.append(ci);
+  }
+}
+function drawDetailChart() { const b = $('#detail-chart'); if (b && detail?.loc) fillChart(b, detail.loc.id); }
+
+function onMapClick(e) {
+  const p = { lat: e.latLng.lat(), lng: e.latLng.lng() };
+  if (e.placeId) { e.stop(); openPlace({ placeId: e.placeId, ...p }); return; }
+  let best, bd = 50;
+  for (const l of locs) { const d = hav(p, l); if (d < bd) { bd = d; best = l; } }
+  if (best) openPlace({ locationId: best.id });
+}
+
+// ---------- directions ----------
+function planSvg(leg, f) {
+  const F = leg.plan[f], N = Object.fromEntries(F.nodes.map(n => [n.id, n]));
+  const xs = F.nodes.map(n => n.x), ys = F.nodes.map(n => n.y);
+  const x0 = Math.min(...xs) - 12, y0 = Math.min(...ys) - 10, w = Math.max(...xs) + 12 - x0, h = Math.max(...ys) + 10 - y0;
+  let s = `<svg viewBox="${x0} ${y0} ${w} ${h}" width="100%" role="img" aria-label="Floor plan">`;
+  F.links.forEach(([a, b, c]) => s += `<line x1="${N[a].x}" y1="${N[a].y}" x2="${N[b].x}" y2="${N[b].y}" stroke="${c ? '#dfe5ee' : '#c3ccd9'}" stroke-width="${c ? 5 : .6}" stroke-linecap="round"/>`);
+  F.nodes.forEach(n => {
+    const lab = String(n.label || '').replace(/[<>&"]/g, '');
+    if (n.type === 'room') s += `<rect x="${n.x - 4}" y="${n.y - 4.5}" width="8" height="9" rx="1" fill="#fff" stroke="#b9c3d1" stroke-width=".4"/><text x="${n.x}" y="${n.y + 1}" font-size="2.6" text-anchor="middle" fill="#0d1b2a">${lab}</text>`;
+    else if (n.type === 'lift' || n.type === 'stairs') s += `<rect x="${n.x - 3}" y="${n.y - 3}" width="6" height="6" rx="1" fill="#1347b8"/><text x="${n.x}" y="${n.y + 1.1}" font-size="3" text-anchor="middle" fill="#fff">${lab}</text>`;
+    else if (n.type === 'entrance') s += `<text x="${n.x}" y="${n.y - 4}" font-size="3" text-anchor="middle" fill="#0d1b2a">Entrance</text>`;
+  });
+  const pts = leg.path.filter(p => p.floor === f), first = leg.path[0], last = leg.path[leg.path.length - 1];
+  if (pts.length > 1) s += `<polyline points="${pts.map(p => p.x + ',' + p.y).join(' ')}" fill="none" stroke="#7b2cbf" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if (first.floor === f) s += `<circle cx="${first.x}" cy="${first.y}" r="2.2" fill="#1a9e6b" stroke="#fff" stroke-width=".6"/>`;
+  if (last.floor === f) s += `<circle cx="${last.x}" cy="${last.y}" r="2.2" fill="#d7263d" stroke="#fff" stroke-width=".6"/>`;
+  return s + '</svg>';
+}
+function showIndoor(leg) {
+  const box = el('div', 'indoor'), tabs = el('div', 'ftabs'), plan = el('div', 'plan'), ol = el('ol', 'steps');
+  const floors = Object.keys(leg.plan).map(Number);
+  const draw = f => { plan.innerHTML = planSvg(leg, f); [...tabs.children].forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === f)); };
+  floors.forEach(f => { const b = el('button', '', f === 0 ? 'Ground' : 'Floor ' + f); b.type = 'button'; b.dataset.f = f; b.onclick = () => draw(f); tabs.append(b); });
+  leg.steps.forEach(s => { const li = el('li', '', s.text); li.onclick = () => draw(s.floor); ol.append(li); });
+  box.append(el('h3', '', `Inside ${leg.building.name}`), el('div', 'meta', `${leg.metres} m, about ${mins(leg.seconds)} min. Tap a step to see its floor.`), tabs, plan, ol);
+  draw(floors[0]);
+  return box;
+}
+function showOutdoor(leg, bounds) {
+  leg.routes.forEach((rt, i) => {
+    const best = i === leg.bestIndex;
+    lines.push(new google.maps.Polyline({ map, path: rt.path, strokeColor: best ? '#1347b8' : '#8a97a8', strokeWeight: best ? 7 : 4, strokeOpacity: best ? .95 : .6, zIndex: best ? 5 : 1 }));
+    rt.path.forEach(p => bounds.extend(p));
+  });
+  const b = leg.routes[leg.bestIndex], f = leg.routes[leg.fastestIndex];
+  return el('div', 'sum', leg.bestIndex === leg.fastestIndex
+    ? `Walk outside: ${mins(b.seconds)} min. This is also the calmest route right now.`
+    : `Walk outside: ${mins(b.seconds)} min on the calmest route (${mins(f.seconds)} min on the fastest). It steers around busy spots.`);
+}
+async function navigate() {
+  const out = $('#r-nav');
+  if (!to) { out.textContent = 'Search for where you are going first.'; return; }
+  out.textContent = 'Finding the best route...';
+  lines.forEach(x => x.setMap(null)); lines = [];
+  let j; try { j = await post('/api/navigate', { from, to, stepFree: $('#sf').checked, at: atISO(), day: $('#day').value }); } catch (e) { out.textContent = e.message; return; }
+  out.replaceChildren(el('div', 'sum', `About ${mins(j.seconds)} min door to door.`));
+  dot('me', from, '#1a9e6b'); dot('to', to, '#d7263d');
+  const bounds = new google.maps.LatLngBounds();
+  j.legs.forEach(l => out.append(l.type === 'outdoor' ? showOutdoor(l, bounds) : showIndoor(l)));
+  const out0 = j.legs.find(l => l.type === 'outdoor'), out1 = [...j.legs].reverse().find(l => l.type === 'outdoor');
+  const join = (a, b) => { if (a && b) lines.push(new google.maps.Polyline({ map, path: [a, b], strokeOpacity: 0, zIndex: 6, icons: [{ icon: { path: 'M 0,-1 0,1', strokeColor: '#1347b8', strokeOpacity: 1, scale: 3 }, offset: '0', repeat: '10px' }] })); };
+  if (out0) { const r = out0.routes[out0.bestIndex].path; join(from, r[0]); }
+  if (out1) { const r = out1.routes[out1.bestIndex].path; join(r[r.length - 1], to); }
+  if (from.lat != null) bounds.extend(from); if (to.lat != null) bounds.extend(to);
+  if (!bounds.isEmpty()) map.fitBounds(bounds, 60);
+}
+
+// ---------- recommendations (lunch and spaces) ----------
+function cards(box, d, kind) {
+  box.replaceChildren(el('div', 'sum', d.summary));
+  d.options.forEach(o => {
+    const div = el('div', 'opt');
+    div.append(el('b', '', o.name), el('span', '', `${word(o.busy)} (${pct(o.busy)}%), ${o.walkMin} min walk${kind === 'lunch' ? `, about ${o.waitMin} min queue` : `, noise ${o.noise}/5`}${o.campus ? '' : ', near campus'}`));
+    const act = el('div', 'actions');
+    act.append(btn('Details', () => openPlace({ locationId: o.id })), btn('Directions', () => { to = { kind: 'campus', name: o.name, lat: o.lat, lng: o.lng, placeId: o.place_id, locationId: o.id }; $('#q-to').value = o.name; dot('to', to, '#d7263d'); tab('nav'); navigate(); }));
+    div.append(act); box.append(div);
+  });
+}
+async function recommend(kind, box, o = {}) {
+  box.textContent = 'Thinking...';
+  const at = { lat: o.lat ?? from.lat, lng: o.lng ?? from.lng };
+  try { cards(box, await post('/api/recommend', { kind, ...at, minutes: o.minutes ?? +$('#mins').value, stepFree: $('#sf').checked, at: atISO(), day: $('#day').value }), kind); }
+  catch (e) { box.textContent = e.message; }
+}
+
+// ---------- report a problem and the incident agent ----------
+let AG = null, rep = { cat: null, place: null, level: 0.9, kind: null };
+const hhm = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+async function loadAgent() { try { AG = await api('/api/agent?sid=' + encodeURIComponent(sid)); } catch (e) { $('#ag-msg').textContent = e.message; return; } renderAgent(); }
+function banner() {
+  const open = (AG?.episodes || []).filter(e => e.status === 'open'), b = $('#incbar');
+  b.hidden = !open.length; if (!open.length) return;
+  b.replaceChildren(el('b', '', open.length === 1 ? 'Reported: ' : `${open.length} reports: `), document.createTextNode(open.map(e => e.label + (e.targetName ? ', ' + e.targetName : '')).join('; ')));
+}
+const pressed = (box, key, val, onPick) => [...box.children].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(val))));
+function chipGroup(box, items, cur, pick) { box.replaceChildren(...items.map(([v, label]) => { const b = el('button', '', label); b.type = 'button'; b.dataset.v = v; b.setAttribute('aria-pressed', String(v === String(cur))); b.onclick = () => { pick(v); [...box.children].forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === String(v)))); }; return b; })); }
+function nearby() {
+  const box = $('#ag-near'); box.replaceChildren();
+  locs.filter(l => l.campus).map(l => ({ l, d: Math.hypot(l.lat - from.lat, (l.lng - from.lng) * 0.63) })).sort((a, b) => a.d - b.d).slice(0, 5)
+    .forEach(({ l }) => box.append(btn(l.name, () => pickPlace({ locationId: l.id, name: l.name }), 'chip')));
+}
+function pickPlace(pl) { rep.place = pl; $('#ag-q').value = pl.name; $('#ag-s').replaceChildren(); }
+function reportAt(id, name) { tab('agent'); pickPlace({ locationId: id, name }); }
+function placeFromResult(x) {
+  const id = x.locationId ?? x.loc;
+  if (id != null) return { locationId: id, name: x.name };
+  const c = locs.filter(l => x.lat != null && Math.hypot((l.lat - x.lat) * 111000, (l.lng - x.lng) * 69000) < 80).sort((a, b) => Math.hypot(a.lat - x.lat, a.lng - x.lng) - Math.hypot(b.lat - x.lat, b.lng - x.lng))[0];
+  return { locationId: c?.id ?? null, name: x.name };
+}
+function renderForm() {
+  const cats = Object.entries(AG.types).filter(([k]) => k !== 'rain').map(([k, v]) => [k, v.label]);
+  chipGroup($('#ag-cats'), cats, rep.cat, v => { rep.cat = v; $('#ag-arow').hidden = v !== 'amenity'; $('#ag-lrow').hidden = v !== 'crowd'; });
+  chipGroup($('#ag-akinds'), Object.entries(AG.amenityKinds).map(([k, l]) => [k, l.charAt(0).toUpperCase() + l.slice(1)]), rep.kind, v => { rep.kind = v; });
+  chipGroup($('#ag-levels'), [['0.1', 'Almost empty'], ['0.45', 'Moderate'], ['0.7', 'Busy'], ['0.95', 'Packed']], String(rep.level), v => { rep.level = +v; });
+  $('#ag-arow').hidden = rep.cat !== 'amenity'; $('#ag-lrow').hidden = rep.cat !== 'crowd';
+}
+function renderAgent() {
+  banner();
+  const w = AG.weather, wx = $('#ag-wx');
+  wx.textContent = w.ok ? `Weather: ${w.wet ? 'raining' : 'dry'}, ${Math.round(w.temp)}°C. Checked automatically at ${hhm(w.checkedAt)} from a weather service, so you don't need to report rain.` : w.ok === false ? 'The weather check is unavailable right now. Rain will be picked up when it is back.' : 'Checking the weather...';
+  if (!$('#ag-cats').children.length) renderForm();
+  nearby();
+  const wanted = $('#ag-wanted'); wanted.replaceChildren();
+  if (AG.wanted.length) wanted.append(el('div', 'sum', 'The agent is least sure about: ' + AG.wanted.map(x => `${x.name} (predicted ${pct(x.busy)}%)`).join(', ') + '. If you are there, a report helps.'));
+  const eps = $('#ag-eps'); eps.replaceChildren();
+  const list = AG.episodes.filter(e => e.status !== 'resolved');
+  if (!list.length) eps.append(el('p', 'meta', 'Nothing reported. Everything runs on the original assumptions.'));
+  list.concat(AG.episodes.filter(e => e.status === 'resolved').slice(0, 3)).forEach(e => {
+    const open = e.status !== 'resolved', c = el('div', 'ep ' + (open ? 'open' : 'closed'));
+    const h = el('h4'); h.append(el('span', '', e.label + (e.targetName && e.type !== 'other' ? ': ' + e.targetName : e.targetName ? ' (' + e.targetName + ')' : '')));
+    const chips = el('span', 'chips'); chips.style.margin = '0';
+    chips.append(el('span', 'chip ' + (!open ? 'ok' : e.reports > 1 || e.source === 'auto' ? 'bad' : ''), !open ? 'Closed' : e.source === 'auto' ? 'Automatic' : e.source === 'demo' ? 'Simulated' : e.reports > 1 ? `Confirmed by ${e.reports}` : 'Unconfirmed, 1 report'));
+    h.append(chips); c.append(h);
+    if (e.type !== 'crowd') c.append(el('div', 'sum', e.update));
+    if (open && e.source !== 'auto') {
+      c.append(el('div', 'meta', `Agent confidence ${pct(e.confidence)}%. Closes by itself around ${hhm(e.expiresAt)} unless more reports come in.`));
+      const act = el('div', 'actions');
+      const a = btn(e.mine ? 'You reported this' : 'I see this too', async () => { try { await post('/api/agent/vote', { id: e.id, vote: 'confirm', sid }); } catch (x) { $('#ag-msg').textContent = x.message; } await Promise.all([loadAgent(), refresh()]); }); a.disabled = e.mine;
+      const f = btn(e.myFixed ? 'Thanks' : "It's fixed", async () => { try { await post('/api/agent/vote', { id: e.id, vote: 'fixed', sid }); } catch (x) { $('#ag-msg').textContent = x.message; } await Promise.all([loadAgent(), refresh()]); }); f.disabled = e.myFixed;
+      act.append(a, f); c.append(act);
+    }
+    const d = el('details'); d.append(el('summary', '', 'How the agent responded'));
+    const dl = el('dl'); [['Believed', e.belief], ['New evidence', e.evidence], ['Now', e.revision]].forEach(([k, v]) => dl.append(el('dt', '', k), el('dd', '', v))); d.append(dl);
+    const ul = el('ul'); e.actions.forEach(x => ul.append(el('li', '', x))); d.append(ul); c.append(d);
+    eps.append(c);
+  });
+  const led = $('#ag-ledger'); led.replaceChildren();
+  AG.ledger.forEach(a => {
+    const d = el('div', 'led'); d.append(el('span', '', a.text));
+    const bar = el('div', 'bar'), i = el('i'); i.style.width = pct(a.conf) + '%'; i.style.background = a.conf < .5 ? '#d7263d' : a.conf < .8 ? '#ff8c00' : '#1a9e6b'; bar.append(i); d.append(bar);
+    d.append(el('small', '', `Confidence ${pct(a.conf)}%` + (a.was != null && a.was !== a.conf ? `, was ${pct(a.was)}%` : '') + (a.note ? `. ${a.note}.` : '')));
+    led.append(d);
+  });
+  const tl = $('#ag-tl'); tl.replaceChildren();
+  AG.timeline.forEach(t => { const li = el('li', t.kind); li.append(el('time', '', hhm(t.t)), document.createTextNode(t.text)); tl.append(li); });
+}
+searchBox($('#ag-q'), $('#ag-s'), x => { rep.place = placeFromResult(x); });
+$('#ag-q').addEventListener('input', () => { rep.place = null; });
+$('#goAgent').onclick = async () => {
+  const msg = $('#ag-msg'), text = $('#ag-text').value.trim(), cat = rep.cat || (text ? 'auto' : null);
+  if (!cat) { msg.textContent = 'Choose what is wrong, or describe it below.'; return; }
+  if (cat !== 'other' && cat !== 'auto' && !rep.place) { msg.textContent = 'Say where it is. Search above, or tap a nearby place.'; return; }
+  if (cat === 'auto' && !rep.place && $('#ag-q').value.trim()) rep.place = { locationId: null, name: $('#ag-q').value.trim() };
+  if (cat === 'other' && !text) { msg.textContent = 'Describe what is wrong in the box below.'; return; }
+  msg.textContent = 'Sending...';
+  let r; try { r = await post('/api/agent/report', { category: cat, locationId: rep.place?.locationId ?? undefined, name: rep.place?.name, level: rep.level, amenityKind: rep.kind, text, sid }); }
+  catch (e) { msg.textContent = e.message; return; }
+  msg.textContent = r.merged ? `Thanks. Someone had already reported this, so the agent now has ${r.reports} reports.` : `Thanks. The agent has updated the map and suggestions for "${r.label}${r.target ? ' at ' + r.target : ''}".`;
+  rep = { cat: null, place: null, level: 0.9, kind: null }; $('#ag-q').value = ''; $('#ag-text').value = ''; renderForm();
+  await Promise.all([loadAgent(), refresh()]);
+};
+$('#agRain').onclick = async () => { try { await post('/api/agent/report', { category: 'rain', source: 'demo', sid }); } catch (e) { $('#ag-msg').textContent = e.message; } await Promise.all([loadAgent(), refresh()]); };
+$('#agReset').onclick = async () => { await post('/api/agent/reset', {}); await Promise.all([loadAgent(), refresh()]); };
+
+// ---------- ask the AI ----------
+async function ask(q) {
+  q = (q ?? $('#q-ask').value).trim(); const box = $('#r-ask');
+  if (!q) { box.textContent = 'Type a question first.'; return; }
+  $('#q-ask').value = q; box.textContent = 'Thinking...';
+  let j; try { j = await post('/api/ask', { question: q, lat: from.lat, lng: from.lng, stepFree: $('#sf').checked, at: atISO(), day: $('#day').value }); } catch (e) { box.textContent = e.message; return; }
+  box.replaceChildren(el('div', 'sum', j.answer));
+  j.places.forEach(o => {
+    const div = el('div', 'opt');
+    div.append(el('b', '', o.name), el('span', '', [`${word(o.busy)} (${pct(o.busy)}%)`, `${o.walkMin} min walk`, ...o.amenities].join(', ')));
+    const act = el('div', 'actions');
+    act.append(btn('Details', () => openPlace({ locationId: o.id })), btn('Directions', () => { to = { kind: 'campus', name: o.name, lat: o.lat, lng: o.lng, placeId: o.place_id, locationId: o.id }; $('#q-to').value = o.name; dot('to', to, '#d7263d'); tab('nav'); navigate(); }));
+    div.append(act); box.append(div);
+  });
+  if (j.src !== 'gemini') box.append(el('p', 'meta', 'The AI is unavailable right now, so this is a simpler answer.'));
+}
+['Is there a free microwave near me?', 'Where can I refill my water bottle?', 'Where can I charge my laptop?', 'Is there a prayer room nearby?', 'Where can I print something?', 'Quietest place to eat my packed lunch?'].forEach(t => $('#askChips').append(btn(t, () => ask(t), 'chip')));
+$('#goAsk').onclick = () => ask();
+$('#q-ask').onkeydown = e => { if (e.key === 'Enter') ask(); };
+
+// ---------- my day (timetable by course and year) ----------
+async function loadCourses() {
+  try { courses = await api('/api/courses'); } catch { return; }
+  $('#dept').replaceChildren(...[el('option', '', 'Choose your course')].map(o => (o.value = '', o)), ...courses.map(c => { const o = el('option', '', c.name); o.value = c.name; return o; }));
+  const saved = +store.get('course'); const d = courses.find(c => c.years.some(y => y.id === saved));
+  if (d) { $('#dept').value = d.name; fillYears(); $('#yr').value = saved; loadDay(); } else fillYears();
+}
+function fillYears() {
+  const d = courses.find(c => c.name === $('#dept').value);
+  $('#yr').replaceChildren(...(d ? d.years.map(y => { const o = el('option', '', `Year ${y.year}`); o.value = y.id; return o; }) : [Object.assign(el('option', '', '-'), { value: '' })]));
+}
+async function loadDay() {
+  const out = $('#r-day'), id = $('#yr').value;
+  if (!id) { out.textContent = 'Choose your course and year to see your timetable.'; return; }
+  store.set('course', id); out.textContent = 'Loading timetable...';
+  let t; try { t = await api(`/api/timetable?course=${id}&${qs()}`); } catch (e) { out.textContent = e.message; return; }
+  out.replaceChildren();
+  out.append(el('div', 'sum', `${t.course.name}, ${DAYN[t.dow]}. ${t.weekend ? 'No classes at the weekend. Pick a weekday in the Day box at the bottom of the map to see your timetable.' : t.sessions.length ? `${t.sessions.length} sessions, ${t.sessions[0].start} to ${t.sessions[t.sessions.length - 1].end}.` : 'No sessions this day.'}`));
+  const items = []; t.sessions.forEach(s => items.push({ at: s.start, s })); t.gaps.forEach(g => items.push({ at: g.start, g }));
+  items.sort((a, b) => a.at.localeCompare(b.at)).forEach(({ s, g }) => {
+    if (s) {
+      const c = el('div', 'sess');
+      c.append(el('b', '', `${s.start} to ${s.end}`), el('div', '', `${s.kind[0].toUpperCase() + s.kind.slice(1)} in ${s.room}`),
+        el('div', 'meta', `${s.building}. Expected ${word(s.busy).toLowerCase()} (${pct(s.busy)}% full) at that time.`));
+      c.append((() => { const a = el('div', 'actions'); a.append(btn('Directions to room', () => { to = s.dest; $('#q-to').value = s.dest.name; dot('to', s.dest, '#d7263d'); tab('nav'); navigate(); }), btn('Place details', () => openPlace({ locationId: s.locationId }))); return a; })());
+      out.append(c);
+    } else {
+      const c = el('div', 'gap'), res = el('div'), lunchy = g.start < '14:30' && g.end > '11:30';
+      c.append(el('b', '', `Free ${g.start} to ${g.end} (${g.minutes} min)`), el('div', 'meta', `After ${g.after}, before ${g.next}. Allow about 10 min to get to your next class.`));
+      const a = el('div', 'actions'), o = { lat: g.lat, lng: g.lng, minutes: g.minutes - 10 };
+      if (lunchy) a.append(btn('Lunch nearby', () => recommend('lunch', res, o)));
+      a.append(btn('Study space', () => recommend('study', res, o)), btn('Quiet space', () => recommend('quiet', res, o)), btn('Social space', () => recommend('social', res, o)));
+      c.append(a, res); out.append(c);
+    }
+  });
+}
+
+function tab(name) {
+  document.querySelectorAll('[role=tab]').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name));
+  ['nav', 'day', 'lunch', 'spaces', 'fc', 'ask', 'agent'].forEach(n => $('#p-' + n).hidden = n !== name);
+  if (name === 'fc') renderForecast();
+  if (name === 'agent') loadAgent();
+}
+document.querySelectorAll('[role=tab]').forEach(t => t.onclick = () => tab(t.dataset.tab));
+$('#goNav').onclick = navigate;
+$('#fold').onclick = () => { document.body.classList.add('folded'); };
+$('#unfold').onclick = () => { document.body.classList.remove('folded'); };
+$('#goLunch').onclick = () => recommend('lunch', $('#r-lunch'));
+$('#goSpace').onclick = () => recommend($('#kind').value, $('#r-space'));
+$('#dept').onchange = () => { fillYears(); loadDay(); };
+$('#yr').onchange = loadDay;
+const reload = () => { refresh().catch(() => {}); if ($('#yr').value) loadDay(); };
+let tm; slider.oninput = () => { live = false; tlabel(); clearTimeout(tm); tm = setTimeout(reload, 150); };
+$('#now').onclick = () => { $('#day').value = ''; setNow(); reload(); };
+$('#day').onchange = () => { tlabel(); reload(); };
+document.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { slider.value = b.dataset.t; live = false; tlabel(); reload(); });
+
+// ---------- smooth heat layer: grey blobs first, then each pixel is coloured from a blue-to-red palette ----------
+function makeHeat() {
+  const pc = document.createElement('canvas'); pc.width = 256; pc.height = 1;
+  const px = pc.getContext('2d'), g = px.createLinearGradient(0, 0, 256, 0);
+  [[0, 'rgba(10,60,255,0)'], [.2, 'rgba(0,180,255,.55)'], [.4, 'rgba(0,220,120,.7)'], [.6, 'rgba(255,235,0,.82)'], [.8, 'rgba(255,140,0,.9)'], [1, 'rgba(215,20,40,.95)']]
+    .forEach(([o, s]) => g.addColorStop(o, s));
+  px.fillStyle = g; px.fillRect(0, 0, 256, 1);
+  const pal = px.getImageData(0, 0, 256, 1).data;
+  class Heat extends google.maps.OverlayView {
+    constructor() { super(); this.pts = []; this.cv = document.createElement('canvas'); this.cv.style.cssText = 'position:absolute;pointer-events:none;opacity:.85'; }
+    onAdd() { const pane = this.getPanes().overlayLayer; pane.insertBefore(this.cv, pane.firstChild); }
+    onRemove() { this.cv.remove(); }
+    draw() {
+      const proj = this.getProjection(), b = map.getBounds(); if (!proj || !b) return;
+      const ne = proj.fromLatLngToDivPixel(b.getNorthEast()), sw = proj.fromLatLngToDivPixel(b.getSouthWest());
+      const padX = (ne.x - sw.x) * .25, padY = (sw.y - ne.y) * .25;
+      const x0 = Math.floor(sw.x - padX), y0 = Math.floor(ne.y - padY), w = Math.ceil(ne.x - sw.x + 2 * padX), h = Math.ceil(sw.y - ne.y + 2 * padY);
+      if (!(w > 0 && h > 0) || w * h > 12e6) return;
+      const R = 85 / (156543.03392 * Math.cos(51.5 * Math.PI / 180) / 2 ** map.getZoom());
+      const cv = this.cv; cv.width = w; cv.height = h; cv.style.left = x0 + 'px'; cv.style.top = y0 + 'px';
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      for (const p of this.pts) {
+        if (p.busy < .02) continue;
+        const q = proj.fromLatLngToDivPixel(new google.maps.LatLng(p.lat, p.lng)), cx = q.x - x0, cy = q.y - y0;
+        if (cx < -R || cy < -R || cx > w + R || cy > h + R) continue;
+        const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+        rg.addColorStop(0, `rgba(0,0,0,${p.busy})`); rg.addColorStop(.5, `rgba(0,0,0,${p.busy * .45})`); rg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = rg; ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+      }
+      const img = ctx.getImageData(0, 0, w, h), d = img.data;
+      for (let i = 3; i < d.length; i += 4) { const a = d[i]; if (a) { const k = a * 4; d[i - 3] = pal[k]; d[i - 2] = pal[k + 1]; d[i - 1] = pal[k + 2]; d[i] = pal[k + 3]; } }
+      ctx.putImageData(img, 0, 0);
+    }
+  }
+  const hm = new Heat(); hm.setMap(map); return hm;
+}
+
+window.gm_authFailure = () => { $('#map').innerHTML = '<p style="padding:24px;max-width:520px">Google Maps rejected the API key. In Google Cloud, check that the Maps JavaScript API is enabled for the key, billing is on, and the key has no website restriction that blocks localhost.</p>'; };
+window.initMap = async () => {
+  map = new google.maps.Map($('#map'), { center: { lat: 51.4988, lng: -0.1752 }, zoom: 17, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_CENTER } });
+  heat = makeHeat();
+  map.addListener('click', onMapClick);
+  map.addListener('idle', () => heat.draw());
+  setNow();
+  loadAgent();
+  await Promise.all([refresh().catch(e => { $('#insight').hidden = false; $('#insight').textContent = e.message; }), loadCourses()]);
+  setInterval(() => { if (live && !$('#day').value) refresh().catch(() => {}); }, 30000);
+};
+(async () => {
+  cfg = await (await fetch('/api/config')).json();
+  const s = document.createElement('script');
+  s.src = `https://maps.googleapis.com/maps/api/js?key=${cfg.mapsKey}&callback=initMap&loading=async&v=weekly`;
+  document.head.append(s);
+})();
+</script>
+<a id="hackbtn" href="/hack.html" title="Hackiest Hack entry">The Microwave Pipeline</a>
+</body>
+</html>
